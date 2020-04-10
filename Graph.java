@@ -1,20 +1,23 @@
 package packing.Common;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Graph {
     private static final String NEWLINE = System.getProperty("line.separator");
-    private ArrayList<Block> bks;
-    private ArrayList<Position> pos;
-    private int V; // the number of node
-    //private int E; // the number of edge
-    private ArrayList<Integer>[] xadj; // X-relation graph
-    private ArrayList<Integer>[] yadj; // Y-relation graph
-    private ArrayList<Integer>[] zadj; // Z-relation graph
-    public Map<Integer, Integer> map; // (K,V) -> (Block.id, serial number)
+    public ArrayList<Block> bks;
+    public ArrayList<Position> pos;
+    public int V; // the number of node
+    public ArrayList<Integer>[] xadj; // X-relation graph
+    public int xE; // the number of edges of X-relation graph
+    public int[] xdegree; // Degrees of nodes in the X-relationship graph
+    public ArrayList<Integer>[] yadj;
+    public int yE;
+    public int[] ydegree;
+    public ArrayList<Integer>[] zadj;
+    public int zE;
+    public int[] zdegree;
     public int[] keys;
+    public boolean[] visited;
 
     public Graph() {
 
@@ -24,21 +27,23 @@ public class Graph {
         bks = _bks;
         pos = _pos;
         V = bks.size();
-        //this.E = 0;
+        this.xE = 0;
+        this.yE = 0;
+        this.zE = 0;
         xadj = (ArrayList<Integer>[]) new ArrayList[V];
         yadj = (ArrayList<Integer>[]) new ArrayList[V];
         zadj = (ArrayList<Integer>[]) new ArrayList[V];
-        map = new HashMap<>();
+        xdegree = new int[V];
+        ydegree = new int[V];
+        zdegree = new int[V];
+        keys = new int[V];
+        visited = new boolean[V];
+
         for (int i = 0; i < V; i++) {
             Block bk = bks.get(i);
-            if (!map.containsKey(bk.id)) {
-                map.put(bk.id, map.size());
-            }
+            keys[i] = bk.id;
         }
-        keys = new int[map.size()];
-        for (int key : map.keySet()) {
-            keys[map.get(key)] = key;
-        }
+
         for (int i = 0; i < V; i++) {
             xadj[i] = new ArrayList<>();
             yadj[i] = new ArrayList<>();
@@ -50,66 +55,144 @@ public class Graph {
                 Position pos2 = pos.get(j);
                 int[] pro = Utility.projection(bk1.cub, pos1, bk2.cub, pos2);
                 if (pro[0] == 1) {
-                    xadj[map.get(bk1.id)].add(map.get(bk2.id));
-                    xadj[map.get(bk2.id)].add(map.get(bk1.id));
+                    xadj[i].add(j);
+                    xadj[j].add(i);
+                    xE++;
                 }
-
+                if (pro[1] == 1) {
+                    yadj[i].add(j);
+                    yadj[j].add(i);
+                    yE++;
+                }
+                if (pro[2] == 1) {
+                    zadj[i].add(j);
+                    zadj[j].add(i);
+                    zE++;
+                }
             }
         }
-
     }
 
-    /*public Graph copy() {
-        Graph g = new Graph();
-        g.V = V;
-        g.E = E;
-        g.adj = new ArrayList[V];
-        for (int v = 0; v < V; v++) {
-            g.adj[v] = new ArrayList<>(adj[v]);
+    public void  get_degree(int v) {
+        for (int i = 0; i < V; i++) {
+            xdegree[i] += xadj[i].size();
+            ydegree[i] += yadj[i].size();
+            zdegree[i] += zadj[i].size();
         }
-        g.map = map; // maybe wrong
-        g.keys = new int[V];
-        System.arraycopy(keys, 0, g.keys, 0, V);
-        return g;
-    }*/
-
-    private void validateVertex(int v) {
-        if (v < 0 || v >= V)
-            throw new IllegalArgumentException("vertex " + v + " is not between 0 and " + (V-1));
     }
 
-    /*public void addEdge(int v, int w) {
-        validateVertex(v);
-        validateVertex(w);
-        E++;
-        adj[v].add(w);
-        adj[w].add(v);
-    }*/
-
-    public Iterable<Integer> adj(int v) {
-        validateVertex(v);
-        return adj[v];
+    public boolean contains(int id) {
+        for (int i = 0; i < keys.length; i++) {
+            if (keys[i] == id && visited[i] == false)
+                return true;
+        }
+        return false;
     }
 
-    public boolean contains(int key) {
-        return map.containsKey(key);
-    }
-
-    public int indexOf(int key) {
-        return map.get(key); // get(K), return V
+    public int indexOf(int id) {
+        int ret = -1;
+        for (int i = 0; i < keys.length; i++) {
+            if (visited[i] == false && keys[i] == id) {
+                visited[i] = true;
+                ret = i;
+            }
+        }
+        return ret;
     }
 
     public int nameOf(int v) {
-        validateVertex(v);
         return keys[v];
+    }
+
+    public int get_diff(Graph g) {
+        int ret = 0;
+        for (int i = 0; i < g.keys.length; i++) {
+            if (contains(g.keys[i])) {
+                int index = indexOf(g.keys[i]);
+
+                ArrayList<Integer> l1 = xadj[index];
+                for (int j = 0; j < l1.size(); j++) {
+                    int id = keys[l1.get(j)];
+                    if (!g.xadj[i].contains(id))
+                        ret++;
+                }
+
+                ArrayList<Integer> l2 = yadj[index];
+                for (int j = 0; j < l2.size(); j++) {
+                    int id = keys[l2.get(j)];
+                    if (!g.yadj[i].contains(id))
+                        ret++;
+                }
+
+                ArrayList<Integer> l3 = zadj[index];
+                for (int j = 0; j < l3.size(); j++) {
+                    int id = keys[l3.get(j)];
+                    if (!g.zadj[i].contains(id))
+                        ret++;
+                }
+            }
+            else
+                ret += g.xadj[i].size() + g.yadj[i].size() + g.zadj[i].size();
+
+        }
+
+        for (int i = 0; i < keys.length; i++) {
+            if (g.contains(keys[i])) {
+                int index = g.indexOf(keys[i]);
+
+                ArrayList<Integer> l1 = g.xadj[index];
+                for (int j = 0; j < l1.size(); j++) {
+                    int id = g.keys[j];
+                    if (!xadj[i].contains(id))
+                        ret++;
+                }
+
+                ArrayList<Integer> l2 = g.yadj[index];
+                for (int j = 0; j < l2.size(); j++) {
+                    int id = g.keys[j];
+                    if (!yadj[i].contains(id))
+                        ret++;
+                }
+
+                ArrayList<Integer> l3 = g.zadj[index];
+                for (int j = 0; j < l3.size(); j++) {
+                    int id = g.keys[j];
+                    if (!zadj[i].contains(id))
+                        ret++;
+                }
+            }
+
+            else
+                ret += xadj[i].size() + yadj[i].size() + zadj[i].size();
+        }
+
+        return ret;
     }
 
     public String toString() {
         StringBuilder s = new StringBuilder();
-        s.append(V + " vertices, " + E + " edges " + NEWLINE);
+        s.append("X-relation " + V + " vertices, " + xE + " edges " + NEWLINE);
         for (int v = 0; v < V; v++) {
             s.append(v + ": ");
-            for (int w : adj[v]) {
+            for (int w : xadj[v]) {
+                s.append(w + " ");
+            }
+            s.append(NEWLINE);
+        }
+        s.append(NEWLINE);
+        s.append("Y-relation " + V + " vertices, " + yE + " edges " + NEWLINE);
+        for (int v = 0; v < V; v++) {
+            s.append(v + ": ");
+            for (int w : yadj[v]) {
+                s.append(w + " ");
+            }
+            s.append(NEWLINE);
+        }
+        s.append(NEWLINE);
+        s.append("Y-relation " + V + " vertices, " + zE + " edges " + NEWLINE);
+        for (int v = 0; v < V; v++) {
+            s.append(v + ": ");
+            for (int w : zadj[v]) {
                 s.append(w + " ");
             }
             s.append(NEWLINE);
