@@ -71,9 +71,10 @@ public class Graph {
                 }
             }
         }
+        get_degree();
     }
 
-    public void  get_degree(int v) {
+    public void  get_degree() {
         for (int i = 0; i < V; i++) {
             xdegree[i] += xadj[i].size();
             ydegree[i] += yadj[i].size();
@@ -83,8 +84,10 @@ public class Graph {
 
     public boolean contains(int id) {
         for (int i = 0; i < keys.length; i++) {
-            if (keys[i] == id && visited[i] == false)
+            if (keys[i] == id && visited[i] == false) {
+                visited[i] = true;
                 return true;
+            }
         }
         return false;
     }
@@ -105,8 +108,10 @@ public class Graph {
         array_init(visited);
         for (int i = 0; i < g.keys.length; i++) {
             if (contains(g.keys[i])) {
+                boolean[] vcopy = new boolean[V];
+                System.arraycopy(visited, 0, vcopy, 0, V);
+                array_init(visited);
                 int index = indexOf(g.keys[i]);
-
                 ArrayList<Integer> l1 = xadj[index];
                 array_init(g.visited);
                 for (int j = 0; j < l1.size(); j++) {
@@ -133,6 +138,7 @@ public class Graph {
                     if (!g.zadj[i].contains(index2))
                         ret++;
                 }
+                visited = vcopy;
             }
             else
                 ret += g.xadj[i].size() + g.yadj[i].size() + g.zadj[i].size();
@@ -141,6 +147,8 @@ public class Graph {
 
         for (int i = 0; i < keys.length; i++) {
             if (g.contains(keys[i])) {
+                boolean[] vcopy = new boolean[g.V];
+                System.arraycopy(g.visited, 0, vcopy, 0, g.V);
                 int index = g.indexOf(keys[i]);
 
                 ArrayList<Integer> l1 = g.xadj[index];
@@ -169,8 +177,8 @@ public class Graph {
                     if (!zadj[i].contains(index1))
                         ret++;
                 }
+                g.visited = vcopy;
             }
-
             else
                 ret += xadj[i].size() + yadj[i].size() + zadj[i].size();
         }
@@ -219,6 +227,7 @@ public class Graph {
                 if (!z.contains(index1))
                     return false;
             }
+            visited = visited_copy;
         }
         return true;
     }
