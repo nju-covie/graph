@@ -42,12 +42,12 @@ public class Graph {
         for (int i = 0; i < V; i++) {
             Block bk = bks.get(i);
             keys[i] = bk.id;
-        }
-
-        for (int i = 0; i < V; i++) {
             xadj[i] = new ArrayList<>();
             yadj[i] = new ArrayList<>();
             zadj[i] = new ArrayList<>();
+        }
+
+        for (int i = 0; i < V; i++) {
             Block bk1 = bks.get(i);
             Position pos1 = pos.get(i);
             for (int j = i + 1; j < V; j++) {
@@ -100,34 +100,37 @@ public class Graph {
         return ret;
     }
 
-    public int nameOf(int v) {
-        return keys[v];
-    }
-
     public int get_diff(Graph g) {
         int ret = 0;
+        array_init(visited);
         for (int i = 0; i < g.keys.length; i++) {
             if (contains(g.keys[i])) {
                 int index = indexOf(g.keys[i]);
 
                 ArrayList<Integer> l1 = xadj[index];
+                array_init(g.visited);
                 for (int j = 0; j < l1.size(); j++) {
                     int id = keys[l1.get(j)];
-                    if (!g.xadj[i].contains(id))
+                    int index2 = g.indexOf(id);
+                    if (!g.xadj[i].contains(index2))
                         ret++;
                 }
 
                 ArrayList<Integer> l2 = yadj[index];
+                array_init(g.visited);
                 for (int j = 0; j < l2.size(); j++) {
                     int id = keys[l2.get(j)];
-                    if (!g.yadj[i].contains(id))
+                    int index2 = g.indexOf(id);
+                    if (!g.yadj[i].contains(index2))
                         ret++;
                 }
 
                 ArrayList<Integer> l3 = zadj[index];
+                array_init(g.visited);
                 for (int j = 0; j < l3.size(); j++) {
                     int id = keys[l3.get(j)];
-                    if (!g.zadj[i].contains(id))
+                    int index2 = g.indexOf(id);
+                    if (!g.zadj[i].contains(index2))
                         ret++;
                 }
             }
@@ -141,23 +144,29 @@ public class Graph {
                 int index = g.indexOf(keys[i]);
 
                 ArrayList<Integer> l1 = g.xadj[index];
+                array_init(visited);
                 for (int j = 0; j < l1.size(); j++) {
                     int id = g.keys[j];
-                    if (!xadj[i].contains(id))
+                    int index1 = indexOf(id);
+                    if (!xadj[i].contains(index1))
                         ret++;
                 }
 
                 ArrayList<Integer> l2 = g.yadj[index];
+                array_init(visited);
                 for (int j = 0; j < l2.size(); j++) {
                     int id = g.keys[j];
-                    if (!yadj[i].contains(id))
+                    int index1 = indexOf(id);
+                    if (!yadj[i].contains(index1))
                         ret++;
                 }
 
                 ArrayList<Integer> l3 = g.zadj[index];
+                array_init(visited);
                 for (int j = 0; j < l3.size(); j++) {
                     int id = g.keys[j];
-                    if (!zadj[i].contains(id))
+                    int index1 = indexOf(id);
+                    if (!zadj[i].contains(index1))
                         ret++;
                 }
             }
@@ -167,6 +176,67 @@ public class Graph {
         }
 
         return ret;
+    }
+
+    public boolean contains(Graph g) {
+        // Check if this graph contains another one (g).
+        array_init(visited);
+        for (int i = 0; i < g.keys.length; i++) {
+            int id1 = g.keys[i];
+            if (!array_contain(id1, keys, visited))
+                return false;
+        }
+
+        array_init(visited);
+        for (int i = 0; i < g.keys.length; i++) {
+            ArrayList<Integer> gx = g.xadj[i];
+            ArrayList<Integer> gy = g.yadj[i];
+            ArrayList<Integer> gz = g.zadj[i];
+            int index = indexOf(g.keys[i]);
+            boolean[] visited_copy = new boolean[V];
+            System.arraycopy(visited, 0, visited_copy, 0, V);
+            ArrayList<Integer> x = xadj[index];
+            ArrayList<Integer> y = yadj[index];
+            ArrayList<Integer> z = zadj[index];
+            array_init(visited);
+            for (int j = 0; j < gx.size(); j++) {
+                int id = g.keys[gx.get(j)];
+                int index1 = indexOf(id);
+                if (!x.contains(index1))
+                    return false;
+            }
+            array_init(visited);
+            for (int j = 0; j < gy.size(); j++) {
+                int id = g.keys[gy.get(i)];
+                int index1 = indexOf(id);
+                if (!y.contains(index1))
+                    return false;
+            }
+            array_init(visited);
+            for (int j = 0; j < gz.size(); j++) {
+                int id = g.keys[gz.get(i)];
+                int index1 = indexOf(id);
+                if (!z.contains(index1))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean array_contain(int id, int[] array, boolean[] visited) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == id && visited[i] == false) {
+                visited[i] = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void array_init(boolean[] array) {
+        for (int i = 0; i < array.length; i++) {
+            array[i] = false;
+        }
     }
 
     public String toString() {
@@ -189,7 +259,7 @@ public class Graph {
             s.append(NEWLINE);
         }
         s.append(NEWLINE);
-        s.append("Y-relation " + V + " vertices, " + zE + " edges " + NEWLINE);
+        s.append("Z-relation " + V + " vertices, " + zE + " edges " + NEWLINE);
         for (int v = 0; v < V; v++) {
             s.append(v + ": ");
             for (int w : zadj[v]) {
